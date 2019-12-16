@@ -19,11 +19,15 @@ import (
 
 // DataTables is the primary rendering function. t is the table name, columns is a comma separated list of database columns.
 // Columns are determined by a comma-space. If using functions, do not put a space between parameters.
-func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, w http.ResponseWriter, r *http.Request) {
+func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, additionalWhere string, w http.ResponseWriter, r *http.Request) {
 	db := sqlx.NewDb(mysqlDb, "mysql")
 
+	if additionalWhere != "" {
+		additionalWhere = " WHERE " + additionalWhere
+	}
+
 	// Total records in database
-	rows, err := db.Query("SELECT COUNT(*) FROM " + t)
+	rows, err := db.Query("SELECT COUNT(*) FROM " + t + additionalWhere)
 
 	if err != nil {
 		log.Fatal(err)
@@ -42,7 +46,7 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, w h
 	// Total records filtered
 	filteredQuery := "FROM " + t
 
-	rows, err = db.Query("SELECT COUNT(*) " + filteredQuery)
+	rows, err = db.Query("SELECT COUNT(*) " + filteredQuery + additionalWhere)
 
 	if err != nil {
 		log.Fatal(err)
@@ -88,7 +92,11 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, w h
 		limit += "LIMIT :length OFFSET :start"
 	}
 
-	filteredQuery += " WHERE"
+	if additionalWhere != "" {
+		filteredQuery += additionalWhere + " AND "
+	} else {
+		filteredQuery += " WHERE"
+	}
 
 	start, _ := strconv.Atoi(r.FormValue("start"))
 	length, _ := strconv.Atoi(r.FormValue("length"))
@@ -143,7 +151,7 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, w h
 		}
 	}
 
-	var final [][]interface{}
+	final := make([][]interface{}, 0)
 
 	if naturalSort {
 		var keys []string
@@ -155,9 +163,11 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, w h
 		natsort.Sort(keys)
 
 		for _, key := range keys {
-			for _, r := range result {
+			for i, r := range result {
 				if key == fmt.Sprintf("%v", r[orderColumn]) {
 					final = append(final, r)
+					result[len(result)-1], result[i] = result[i], result[len(result)-1]
+					result = result[:len(result)-1]
 					break
 				}
 			}
@@ -169,7 +179,9 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, w h
 			}
 		}
 
-		final = final[start : start+length]
+		if len(final) != 0 && len(final) > start+length-1 {
+			final = final[start : start+length]
+		}
 	} else {
 		final = result
 	}
@@ -181,5 +193,5 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, w h
 	output["recordsFiltered"] = filtered
 	output["data"] = final
 
-	err = json.NewEncoder(w).Encode(output)
+	json.NewEncoder(w).Encode(output)
 }

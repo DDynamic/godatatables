@@ -36,7 +36,7 @@ func main() {
 			fmt.Println(err)
 		}
 
-		godatatables.DataTables(db, "transactions", "CONCAT('https//politicsandwar.com/nation/id=',banker_id), money", true, w, r)
+		godatatables.DataTables(db, "members", "id, name", false, "", w, r)
 	})
 
 	http.ListenAndServe(":8080", nil)
