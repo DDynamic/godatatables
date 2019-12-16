@@ -103,6 +103,10 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, add
 	start, _ := strconv.Atoi(r.FormValue("start"))
 	length, _ := strconv.Atoi(r.FormValue("length"))
 
+	if length == -1 {
+		length = total
+	}
+
 	// Get all records with pagnation
 	frows, err = db.NamedQuery("SELECT "+columns+" "+filteredQuery+" "+search+" "+order+" "+limit, map[string]interface{}{
 		"search": r.FormValue("search[value]"),
