@@ -93,7 +93,8 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, add
 	}
 
 	if additionalWhere != "" {
-		filteredQuery += additionalWhere + " AND "
+		filteredQuery += additionalWhere + " AND ("
+		search += ")"
 	} else {
 		filteredQuery += " WHERE"
 	}
@@ -151,7 +152,7 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, add
 		}
 	}
 
-	final := make([][]interface{}, 0)
+	var final [][]interface{}
 
 	if naturalSort {
 		var keys []string
@@ -183,7 +184,9 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, add
 			final = final[start : start+length]
 		}
 	} else {
-		final = result
+		if len(result) > 0 {
+			final = result
+		}
 	}
 
 	output := make(map[string]interface{})
@@ -191,7 +194,12 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, add
 	output["draw"], _ = strconv.Atoi(r.FormValue("draw"))
 	output["recordsTotal"] = total
 	output["recordsFiltered"] = filtered
-	output["data"] = final
+
+	if len(final) == 0 {
+		output["data"] = 0
+	} else {
+		output["data"] = final
+	}
 
 	json.NewEncoder(w).Encode(output)
 }
