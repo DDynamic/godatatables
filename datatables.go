@@ -48,7 +48,7 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, add
 	checkColumns := strings.Split(columns, ", ")
 
 	for i, column := range checkColumns {
-		search += string(column) + " LIKE CONCAT(:search, '%')"
+		search += string(column) + " LIKE CONCAT('%',:search,'%')"
 
 		if i != len(checkColumns)-1 {
 			search += " OR "
