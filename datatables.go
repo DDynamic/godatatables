@@ -60,7 +60,7 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, w http.ResponseWriter
 	splitColumns := strings.Split(columns, ", ")
 
 	for i, column := range splitColumns {
-		search += "`" + string(column) + "`" + " LIKE CONCAT(:search, '%')"
+		search += string(column) + " LIKE CONCAT(:search, '%')"
 
 		if i != len(splitColumns)-1 {
 			search += " OR "
