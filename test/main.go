@@ -13,17 +13,17 @@ import (
 )
 
 func main() {
-	env, _ := godotenv.Read()
+	env, _ := godotenv.Read("test/.env")
 
 	if env["DATABASE_URL"] == "" {
 		env["DATABASE_URL"] = "root:password@tcp(127.0.0.1:3306)/test?parseTime=true&charset=utf8mb4,utf8"
 	}
 
-	godotenv.Write(env, "./.env")
+	godotenv.Write(env, "test/.env")
 
-	godotenv.Load()
+	godotenv.Load("test/.env")
 
-	tmpl := template.Must(template.ParseFiles("test.html"))
+	tmpl := template.Must(template.ParseFiles("test/test.html"))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tmpl.Execute(w, nil)
@@ -36,7 +36,7 @@ func main() {
 			fmt.Println(err)
 		}
 
-		godatatables.DataTables(db, "members", "id, name", w, r)
+		godatatables.DataTables(db, "members", "id, created_at, name", w, r)
 	})
 
 	http.ListenAndServe(":8080", nil)

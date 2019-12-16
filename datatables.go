@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -117,6 +118,8 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, w http.ResponseWriter
 					m = append(m, value.(int64))
 				case float64:
 					m = append(m, value.(float64))
+				case time.Time:
+					m = append(m, value.(time.Time))
 				}
 			}
 
