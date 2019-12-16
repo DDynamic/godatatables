@@ -163,14 +163,15 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, add
 		var keys []string
 
 		for _, r := range result {
-			keys = append(keys, fmt.Sprintf("%v", r[orderColumn]))
+			key := strings.ReplaceAll(fmt.Sprintf("%v", r[orderColumn]), ",", "")
+			keys = append(keys, key)
 		}
 
 		natsort.Sort(keys)
 
 		for _, key := range keys {
 			for i, r := range result {
-				if key == fmt.Sprintf("%v", r[orderColumn]) {
+				if key == strings.ReplaceAll(fmt.Sprintf("%v", r[orderColumn]), ",", "") {
 					final = append(final, r)
 					result[len(result)-1], result[i] = result[i], result[len(result)-1]
 					result = result[:len(result)-1]
