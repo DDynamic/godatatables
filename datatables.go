@@ -72,8 +72,6 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, w http.ResponseWriter
 
 	if i, err := strconv.Atoi(r.FormValue("order[0][column]")); err == nil {
 		order += "ORDER BY " + splitColumns[i] + " " + r.FormValue("order[0][dir]")
-	} else {
-		fmt.Println(err)
 	}
 
 	filteredQuery += " WHERE "
