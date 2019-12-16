@@ -43,54 +43,20 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, add
 		}
 	}
 
-	// Total records filtered
-	filteredQuery := "FROM " + t
-
-	rows, err = db.Query("SELECT COUNT(*) " + filteredQuery + additionalWhere)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer rows.Close()
-
-	var filtered int
-
-	for rows.Next() {
-		if err := rows.Scan(&filtered); err != nil {
-			log.Fatal(err)
-		}
-	}
-
 	// Search
 	search := ""
 	checkColumns := strings.Split(columns, ", ")
-	var splitColumns []string
 
-	for _, column := range checkColumns {
-		if !strings.Contains(column, "(") {
-			splitColumns = append(splitColumns, column)
-		}
-	}
-
-	for i, column := range splitColumns {
+	for i, column := range checkColumns {
 		search += string(column) + " LIKE CONCAT(:search, '%')"
 
-		if i != len(splitColumns)-1 {
+		if i != len(checkColumns)-1 {
 			search += " OR "
 		}
 	}
 
-	orderColumn, _ := strconv.Atoi(r.FormValue("order[0][column]"))
-
-	order := ""
-	limit := ""
-
-	// Order and Limit
-	if !naturalSort {
-		order += "ORDER BY " + checkColumns[orderColumn] + " " + r.FormValue("order[0][dir]")
-		limit += "LIMIT :length OFFSET :start"
-	}
+	// Total records filtered
+	filteredQuery := "FROM " + t
 
 	if additionalWhere != "" {
 		if search == "" {
@@ -105,11 +71,40 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, add
 		}
 	}
 
+	frows, err := db.NamedQuery("SELECT COUNT(*) "+filteredQuery+" "+search, map[string]interface{}{
+		"search": r.FormValue("search[value]"),
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer frows.Close()
+
+	var filtered int
+
+	for frows.Next() {
+		if err := frows.Scan(&filtered); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	orderColumn, _ := strconv.Atoi(r.FormValue("order[0][column]"))
+
+	order := ""
+	limit := ""
+
+	// Order and Limit
+	if !naturalSort {
+		order += "ORDER BY " + checkColumns[orderColumn] + " " + r.FormValue("order[0][dir]")
+		limit += "LIMIT :length OFFSET :start"
+	}
+
 	start, _ := strconv.Atoi(r.FormValue("start"))
 	length, _ := strconv.Atoi(r.FormValue("length"))
 
 	// Get all records with pagnation
-	frows, err := db.NamedQuery("SELECT "+columns+" "+filteredQuery+" "+search+" "+order+" "+limit, map[string]interface{}{
+	frows, err = db.NamedQuery("SELECT "+columns+" "+filteredQuery+" "+search+" "+order+" "+limit, map[string]interface{}{
 		"search": r.FormValue("search[value]"),
 		"length": length,
 		"start":  start,
