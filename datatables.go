@@ -93,10 +93,16 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, naturalSort bool, add
 	}
 
 	if additionalWhere != "" {
-		filteredQuery += additionalWhere + " AND ("
-		search += ")"
+		if search == "" {
+			filteredQuery += additionalWhere
+		} else {
+			filteredQuery += additionalWhere + " AND ("
+			search += ")"
+		}
 	} else {
-		filteredQuery += " WHERE"
+		if search != "" {
+			filteredQuery += " WHERE"
+		}
 	}
 
 	start, _ := strconv.Atoi(r.FormValue("start"))
