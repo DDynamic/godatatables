@@ -36,7 +36,7 @@ func main() {
 			fmt.Println(err)
 		}
 
-		godatatables.DataTables(db, "members", "id, created_at, name", w, r)
+		godatatables.DataTables(db, "transactions", "created_at, money", w, r)
 	})
 
 	http.ListenAndServe(":8080", nil)

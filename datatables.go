@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"facette.io/natsort"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -58,7 +59,14 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, w http.ResponseWriter
 
 	// Search
 	search := ""
-	splitColumns := strings.Split(columns, ", ")
+	checkColumns := strings.Split(columns, ", ")
+	var splitColumns []string
+
+	for _, column := range checkColumns {
+		if !strings.Contains(column, "(") {
+			splitColumns = append(splitColumns, column)
+		}
+	}
 
 	for i, column := range splitColumns {
 		search += string(column) + " LIKE CONCAT(:search, '%')"
@@ -68,20 +76,11 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, w http.ResponseWriter
 		}
 	}
 
-	// Order
-	order := ""
-
-	if i, err := strconv.Atoi(r.FormValue("order[0][column]")); err == nil {
-		order += "ORDER BY " + splitColumns[i] + " " + r.FormValue("order[0][dir]")
-	}
-
-	filteredQuery += " WHERE "
+	filteredQuery += " WHERE"
 
 	// Get all records with pagnation
-	frows, err := db.NamedQuery("SELECT "+columns+" "+filteredQuery+" "+search+" "+order+" LIMIT :length OFFSET :start", map[string]interface{}{
+	frows, err := db.NamedQuery("SELECT "+columns+" "+filteredQuery+" "+search, map[string]interface{}{
 		"search": r.FormValue("search[value]"),
-		"length": r.FormValue("length"),
-		"start":  r.FormValue("start"),
 	})
 
 	if err != nil {
@@ -94,7 +93,10 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, w http.ResponseWriter
 		fmt.Println(err)
 	}
 
-	var result []interface{}
+	orderColumn, _ := strconv.Atoi(r.FormValue("order[0][column]"))
+
+	var keys []string
+	var result [][]interface{}
 
 	for frows.Next() {
 		columns := make([]interface{}, len(cols))
@@ -123,16 +125,39 @@ func DataTables(mysqlDb *sql.DB, t string, columns string, w http.ResponseWriter
 				}
 			}
 
+			keys = append(keys, fmt.Sprintf("%v", m[orderColumn]))
 			result = append(result, m)
 		}
 	}
+
+	natsort.Sort(keys)
+
+	var sorted []interface{}
+
+	for _, key := range keys {
+		for _, r := range result {
+			if key == fmt.Sprintf("%v", r[orderColumn]) {
+				sorted = append(sorted, r)
+				break
+			}
+		}
+	}
+
+	if r.FormValue("order[0][dir]") == "desc" {
+		for i, j := 0, len(sorted)-1; i < j; i, j = i+1, j-1 {
+			sorted[i], sorted[j] = sorted[j], sorted[i]
+		}
+	}
+
+	length, _ := strconv.Atoi(r.FormValue("length"))
+	start, _ := strconv.Atoi(r.FormValue("start"))
 
 	output := make(map[string]interface{})
 
 	output["draw"], _ = strconv.Atoi(r.FormValue("draw"))
 	output["recordsTotal"] = total
 	output["recordsFiltered"] = filtered
-	output["data"] = result
+	output["data"] = sorted[start : start+length]
 
 	err = json.NewEncoder(w).Encode(output)
 }
