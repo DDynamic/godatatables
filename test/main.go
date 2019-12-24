@@ -23,6 +23,12 @@ func main() {
 
 	godotenv.Load("test/.env")
 
+	db, err := sql.Open("mysql", os.Getenv("DATABASE_URL"))
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	tmpl := template.Must(template.ParseFiles("test/test.html"))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -30,13 +36,7 @@ func main() {
 	})
 
 	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		db, err := sql.Open("mysql", os.Getenv("DATABASE_URL"))
-
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		godatatables.DataTables(db, "members", "id, name", false, "", w, r)
+		godatatables.DataTables(w, r, db, "members", "", godatatables.Column{Name: "id", Display: "id"}, godatatables.Column{Name: "name", Display: "name"})
 	})
 
 	http.ListenAndServe(":8080", nil)
