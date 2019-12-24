@@ -1,6 +1,6 @@
 // Copyright (c) 2019 Dylan Seidt
 
-// Package godatatables contains the main DataTables function
+// Package godatatables implements a function to handle a DataTables request.
 package godatatables
 
 import (
@@ -16,7 +16,12 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// Column represents an SQL column. Search is the value that should be searched in the column. Name is the exact name of the column. Display is how the column should be mutated. Order is how the column should be ordered.
+// Column represents an SQL column.
+// Name is the name of the column in the table.
+// Search is how the column should be searched.
+// Display is how the column should be rendered.
+// Order is how the column should be ordered.
+// If search, display, or order are blank, name will be used.
 type Column struct {
 	Name    string
 	Search  string
@@ -24,8 +29,13 @@ type Column struct {
 	Order   string
 }
 
-// DataTables is the primary rendering function. t is the table name, columns is a comma separated list of database columns.
-// Columns are determined by a comma-space. If using functions, do not put a space between parameters.
+// DataTables handles a client DataTables request.
+// w is the http.ResponseWriter.
+// r is the *http.Request.
+// mysqlDb is an instance of *sql.Db
+// t is the name of the database table
+// additionalWhere is any additional where clause to be applied to the query.
+// Specify columns that should be present in the response.
 func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t string, additionalWhere string, columns ...Column) {
 	db := sqlx.NewDb(mysqlDb, "mysql")
 
