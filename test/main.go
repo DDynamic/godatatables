@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/ddynamic/godatatables"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
 
