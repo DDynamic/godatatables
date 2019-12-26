@@ -66,7 +66,11 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 
 	// Select columns
 	for i, column := range columns {
-		statement += column.Display
+		if column.Display == "" {
+			statement += column.Name
+		} else {
+			statement += column.Display
+		}
 
 		if i+1 != len(columns) {
 			statement += ", "
