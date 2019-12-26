@@ -1,4 +1,6 @@
 # godatatables
+[![GoDoc](https://godoc.org/github.com/gomarkdown/markdown?status.svg)](https://godoc.org/github.com/ddynamic/godatatables)
+
 Server-side processing for DataTables in Go
 
 See `test/main.go` for example usage.
