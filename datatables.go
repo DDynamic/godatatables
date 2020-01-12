@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Dylan Seidt
+// Copyright (c) 2019-2020 Dylan Seidt
 
 // Package godatatables implements a function to handle a DataTables request.
 package godatatables
@@ -67,9 +67,9 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 	// Select columns
 	for i, column := range columns {
 		if column.Display == "" {
-			statement += column.Name
+			statement += "IF(ISNULL(" + column.Name + "),\"\"," + column.Name + ")"
 		} else {
-			statement += column.Display
+			statement += "IF(ISNULL(" + column.Display + "),\"\"," + column.Display + ")"
 		}
 
 		if i+1 != len(columns) {
