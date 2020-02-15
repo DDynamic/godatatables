@@ -107,7 +107,7 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 	search := r.FormValue("search[value]")
 
 	// Count Filtered
-	rows, err := db.NamedQuery("SELECT COUNT(*) "+"FROM "+strings.Split(statement, "FROM ")[1], map[string]interface{}{
+	rows, err := db.NamedQuery("SELECT COUNT(*) "+statement[strings.Index(statement, "FROM "):len(statement)], map[string]interface{}{
 		"search": search,
 	})
 
