@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -63,6 +62,7 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 	}
 
 	statement := "SELECT "
+	countFiltered := "SELECT COUNT(*) FROM " + t + " WHERE "
 
 	// Select columns
 	for i, column := range columns {
@@ -82,32 +82,38 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 	// Append additional where clause
 	if additionalWhere != "" {
 		statement += additionalWhere + " AND ("
+		countFiltered += additionalWhere + " AND ("
 	}
 
 	// Search columns
 	for i, column := range columns {
 		if column.Search == "" {
 			statement += column.Name
+			countFiltered += column.Name
 		} else {
 			statement += column.Search
+			countFiltered += column.Search
 		}
 
 		statement += " LIKE CONCAT('%', :search, '%')"
+		countFiltered += " LIKE CONCAT('%', :search, '%')"
 
 		if i+1 != len(columns) {
 			statement += " OR "
+			countFiltered += " OR "
 		}
 	}
 
 	// Close additional where clause
 	if additionalWhere != "" {
 		statement += ")"
+		countFiltered += ")"
 	}
 
 	search := r.FormValue("search[value]")
 
 	// Count Filtered
-	rows, err := db.NamedQuery("SELECT COUNT(*) "+statement[strings.Index(statement, "FROM "):len(statement)], map[string]interface{}{
+	rows, err := db.NamedQuery(countFiltered, map[string]interface{}{
 		"search": search,
 	})
 
