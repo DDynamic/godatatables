@@ -34,12 +34,17 @@ type Column struct {
 // mysqlDb is an instance of *sql.Db
 // t is the name of the database table
 // additionalWhere is any additional where clause to be applied to the query.
+// groupBy is the group by clause.
 // Specify columns that should be present in the response.
-func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t string, additionalWhere string, columns ...Column) {
+func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t string, additionalWhere string, groupBy string, columns ...Column) {
 	db := sqlx.NewDb(mysqlDb, "mysql")
 
 	// Count All Records
 	query := "SELECT COUNT(*) FROM " + t
+
+	if groupBy != "" {
+		query += " GROUP BY " + groupBy
+	}
 
 	if additionalWhere != "" {
 		query += " WHERE " + additionalWhere
@@ -66,10 +71,18 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 
 	// Select columns
 	for i, column := range columns {
-		if column.Display == "" {
-			statement += "IF(ISNULL(" + column.Name + "),\"\"," + column.Name + ")"
+		if groupBy == "" {
+			if column.Display == "" {
+				statement += "IF(ISNULL(" + column.Name + "),\"\"," + column.Name + ")"
+			} else {
+				statement += "IF(ISNULL(" + column.Display + "),\"\"," + column.Display + ")"
+			}
 		} else {
-			statement += "IF(ISNULL(" + column.Display + "),\"\"," + column.Display + ")"
+			if column.Display == "" {
+				statement += column.Name
+			} else {
+				statement += column.Display
+			}
 		}
 
 		if i+1 != len(columns) {
@@ -111,6 +124,11 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 	}
 
 	search := r.FormValue("search[value]")
+
+	if groupBy != "" {
+		countFiltered += " GROUP BY " + groupBy
+		statement += " GROUP BY " + groupBy
+	}
 
 	// Count Filtered
 	rows, err := db.NamedQuery(countFiltered, map[string]interface{}{
