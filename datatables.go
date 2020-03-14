@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -98,8 +99,20 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 		countFiltered += additionalWhere + " AND ("
 	}
 
+	var searchColumns []Column
+
+	for _, column := range columns {
+		if groupBy == "" {
+			searchColumns = append(searchColumns, column)
+		} else {
+			if strings.Contains(groupBy, column.Name) || (strings.Contains(groupBy, column.Search) && column.Search != "") {
+				searchColumns = append(searchColumns, column)
+			}
+		}
+	}
+
 	// Search columns
-	for i, column := range columns {
+	for i, column := range searchColumns {
 		if column.Search == "" {
 			statement += column.Name
 			countFiltered += column.Name
@@ -111,7 +124,7 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 		statement += " LIKE CONCAT('%', :search, '%')"
 		countFiltered += " LIKE CONCAT('%', :search, '%')"
 
-		if i+1 != len(columns) {
+		if i+1 != len(searchColumns) {
 			statement += " OR "
 			countFiltered += " OR "
 		}
