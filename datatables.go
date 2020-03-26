@@ -95,8 +95,8 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 
 	// Append additional where clause
 	if additionalWhere != "" {
-		statement += additionalWhere + " AND ("
-		countFiltered += additionalWhere + " AND ("
+		statement += "(" + additionalWhere + ") AND ("
+		countFiltered += "(" + additionalWhere + ") AND ("
 	}
 
 	var searchColumns []Column
