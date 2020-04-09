@@ -44,11 +44,16 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 	query := "SELECT COUNT(*) FROM " + t
 
 	if groupBy != "" {
+		query = "SELECT COUNT(*) FROM (SELECT COUNT(*) FROM " + t
 		query += " GROUP BY " + groupBy
 	}
 
 	if additionalWhere != "" {
 		query += " WHERE " + additionalWhere
+	}
+
+	if groupBy != "" {
+		query += ") AS count_table"
 	}
 
 	arows, err := db.Query(query)
@@ -68,7 +73,13 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 	}
 
 	statement := "SELECT "
-	countFiltered := "SELECT COUNT(*) FROM " + t + " WHERE "
+	countFiltered := ""
+
+	if groupBy != "" {
+		countFiltered = "SELECT COUNT(*) FROM (SELECT COUNT(*) FROM " + t + " WHERE "
+	} else {
+		countFiltered = "SELECT COUNT(*) FROM " + t + " WHERE "
+	}
 
 	// Select columns
 	for i, column := range columns {
@@ -139,7 +150,7 @@ func DataTables(w http.ResponseWriter, r *http.Request, mysqlDb *sql.DB, t strin
 	search := r.FormValue("search[value]")
 
 	if groupBy != "" {
-		countFiltered += " GROUP BY " + groupBy
+		countFiltered += " GROUP BY " + groupBy + ") AS count_table"
 		statement += " GROUP BY " + groupBy
 	}
 
